@@ -5,6 +5,8 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Math/Quat.h"
 #include "Math/UnitConversion.h"
+#include "Components/BoxComponent.h"
+#include "PCGTesting/PCGTestingCharacter.h"
 
 // Sets default values
 AFloor::AFloor()
@@ -20,15 +22,22 @@ AFloor::AFloor()
 	WallMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>("Wall");
 
 	DoorMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>("Door");
+
+	DoorCollision = CreateDefaultSubobject<UBoxComponent>("Collider");
+	DoorCollision->SetupAttachment(DoorMesh);
 }
 
 // Called when the game starts or when spawned
 void AFloor::BeginPlay()
 {
 	Super::BeginPlay();
+	Origin.SetLocation(FVector3d(GetActorLocation()));
 	NumberOfXTiles = FMath::RandRange(2,10);
 	NumberOfYTiles = FMath::RandRange(2,10);
 	MaxNumberOfDoors = FMath::RandRange(1,(NumberOfXTiles + NumberOfYTiles)/3);
+
+	DoorCollision->OnComponentBeginOverlap.AddDynamic(this, &AFloor::OnBoxOverlap);
+
 	SpawnFloor(NumberOfXTiles, NumberOfYTiles);
 }
 
@@ -38,9 +47,10 @@ void AFloor::SpawnFloor(int x, int y)
 	{
 		for (int j = 0; j < y; j++)
 		{
-			SpawnPoint.SetLocation(FVector3d(Length*i,Width*j,0));
+			
+			SpawnPoint.SetLocation(FVector3d(Origin.GetLocation().X + Length*i,Origin.GetLocation().Y +Width*j,Origin.GetLocation().Z));
 			FloorMesh->AddInstance(SpawnPoint);
-			SpawnPoint.SetLocation(FVector3d(Length*i,Width*j,Height));
+			SpawnPoint.SetLocation(FVector3d(Origin.GetLocation().X + Length*i,Origin.GetLocation().Y + Width*j,Origin.GetLocation().Z + Height));
 			FloorMesh->AddInstance(SpawnPoint);
 		}
 	}
@@ -51,8 +61,8 @@ void AFloor::SpawnWall(int x, int y)
 {
 	for (int i = 0; i < x; i++) // Spawn horizontal walls
 	{
-		FVector SpawnLocationTop = FVector(Length * i, 0, 0);
-		FVector SpawnLocationBottom = FVector(Length * i, Width * y, 0);
+		FVector SpawnLocationTop = FVector(Origin.GetLocation().X + Length * i,Origin.GetLocation().Y,Origin.GetLocation().Z);
+		FVector SpawnLocationBottom = FVector(Origin.GetLocation().X + Length * i,Origin.GetLocation().Y + Width * y, Origin.GetLocation().Z);
 		
 		if (DoorsSpawned <= MaxNumberOfDoors)
 		{
@@ -88,8 +98,8 @@ void AFloor::SpawnWall(int x, int y)
 
 	for (int j = 0; j < y; j++)	// Spawn vertical walls
 	{
-		FVector SpawnLocationRight = FVector(0, Width * j, 0);
-		FVector SpawnLocationLeft = FVector(Length * x, Width * j, 0);
+		FVector SpawnLocationRight = FVector(Origin.GetLocation().X, Origin.GetLocation().Y + Width * j, Origin.GetLocation().Z);
+		FVector SpawnLocationLeft = FVector(Origin.GetLocation().X + Length * x, Origin.GetLocation().Y + Width * j, Origin.GetLocation().Z);
 		// Use a quaternion to rotate the walls to be vertical
 		FQuat Rotation = FQuat::MakeFromEuler(FVector(0, 0, 90)); // 90-degree rotation around the Z-axis
 		
@@ -122,6 +132,16 @@ void AFloor::SpawnWall(int x, int y)
 			WallMesh->AddInstance(FTransform(Rotation,SpawnLocationRight));
 			WallMesh->AddInstance(FTransform(Rotation,SpawnLocationLeft));
 		}
+	}
+}
+
+void AFloor::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex, bool FromSweep, const FHitResult& SweepResult)
+{
+	APCGTestingCharacter* Player = Cast<APCGTestingCharacter>(OtherActor);
+	if(Player)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("New Room"));
 	}
 }
 
