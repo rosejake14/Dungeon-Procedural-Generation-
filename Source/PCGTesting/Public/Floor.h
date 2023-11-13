@@ -4,7 +4,6 @@
 #include "GameFramework/Actor.h"
 #include "Floor.generated.h"
 
-class UBoxComponent;
 class UInstancedStaticMeshComponent;
 
 UCLASS()
@@ -46,9 +45,6 @@ protected:
 	UPROPERTY(EditAnywhere)
 	UInstancedStaticMeshComponent* DoorMesh;
 
-	UPROPERTY(EditAnywhere)
-	UBoxComponent* DoorCollision;
-
 	UFUNCTION()
 	void SpawnFloor(int x, int y);
 
@@ -67,10 +63,13 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	int DoorsSpawned = 0;
 
+	UPROPERTY(VisibleAnywhere)
+	TArray<FTransform> DoorPoints;
+
 	UFUNCTION()
-	virtual void OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-							  UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool FromSweep,
-							  const FHitResult& SweepResult);
+	void SetDefaultValues();
+
+	
 private:
 
 

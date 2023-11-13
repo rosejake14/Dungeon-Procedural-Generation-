@@ -4,9 +4,8 @@
 #include "Floor.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Math/Quat.h"
-#include "Math/UnitConversion.h"
 #include "Components/BoxComponent.h"
-#include "PCGTesting/PCGTestingCharacter.h"
+
 
 // Sets default values
 AFloor::AFloor()
@@ -22,9 +21,6 @@ AFloor::AFloor()
 	WallMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>("Wall");
 
 	DoorMesh = CreateDefaultSubobject<UInstancedStaticMeshComponent>("Door");
-
-	DoorCollision = CreateDefaultSubobject<UBoxComponent>("Collider");
-	DoorCollision->SetupAttachment(DoorMesh);
 }
 
 // Called when the game starts or when spawned
@@ -32,13 +28,27 @@ void AFloor::BeginPlay()
 {
 	Super::BeginPlay();
 	Origin.SetLocation(FVector3d(GetActorLocation()));
+	SetDefaultValues();
+	
+	SpawnFloor(NumberOfXTiles, NumberOfYTiles);
+
+	for(int i = 0; i < 5; i++)
+	{
+		Origin.SetLocation(FVector3d(DoorPoints[0].GetLocation()));
+     	Origin.SetRotation(DoorPoints[i].GetRotation());
+     	SetDefaultValues();
+		
+     	SpawnFloor(NumberOfXTiles, NumberOfYTiles);
+	}
+	
+}
+void AFloor::SetDefaultValues()
+{
 	NumberOfXTiles = FMath::RandRange(2,10);
 	NumberOfYTiles = FMath::RandRange(2,10);
 	MaxNumberOfDoors = FMath::RandRange(1,(NumberOfXTiles + NumberOfYTiles)/3);
-
-	DoorCollision->OnComponentBeginOverlap.AddDynamic(this, &AFloor::OnBoxOverlap);
-
-	SpawnFloor(NumberOfXTiles, NumberOfYTiles);
+	DoorsSpawned = 0;
+	DoorPoints.Reset();
 }
 
 void AFloor::SpawnFloor(int x, int y)
@@ -50,8 +60,8 @@ void AFloor::SpawnFloor(int x, int y)
 			
 			SpawnPoint.SetLocation(FVector3d(Origin.GetLocation().X + Length*i,Origin.GetLocation().Y +Width*j,Origin.GetLocation().Z));
 			FloorMesh->AddInstance(SpawnPoint);
-			SpawnPoint.SetLocation(FVector3d(Origin.GetLocation().X + Length*i,Origin.GetLocation().Y + Width*j,Origin.GetLocation().Z + Height));
-			FloorMesh->AddInstance(SpawnPoint);
+			//SpawnPoint.SetLocation(FVector3d(Origin.GetLocation().X + Length*i,Origin.GetLocation().Y + Width*j,Origin.GetLocation().Z + Height));
+			//FloorMesh->AddInstance(SpawnPoint);
 		}
 	}
 	SpawnWall(NumberOfXTiles, NumberOfYTiles);
@@ -72,12 +82,16 @@ void AFloor::SpawnWall(int x, int y)
 			{
 				case 0:
 					DoorMesh->AddInstance(FTransform(SpawnLocationTop));
+					DoorPoints.Add(FTransform(SpawnLocationTop));
+				
 					WallMesh->AddInstance(FTransform(SpawnLocationBottom));
 					DoorsSpawned++;
 					break;
 				case 1:
 					WallMesh->AddInstance(FTransform(SpawnLocationTop));
+				
 					DoorMesh->AddInstance(FTransform(SpawnLocationBottom));
+					DoorPoints.Add(FTransform(SpawnLocationBottom));
 					DoorsSpawned++;
 					break;
 
@@ -111,12 +125,16 @@ void AFloor::SpawnWall(int x, int y)
 			{
 			case 0:
 				DoorMesh->AddInstance(FTransform(Rotation,SpawnLocationRight));
+				DoorPoints.Add(FTransform(Rotation, SpawnLocationRight));
+				
 				WallMesh->AddInstance(FTransform(Rotation,SpawnLocationLeft));
 				DoorsSpawned++;
 				break;
 			case 1:
 				WallMesh->AddInstance(FTransform(Rotation,SpawnLocationRight));
+				
 				DoorMesh->AddInstance(FTransform(Rotation,SpawnLocationLeft));
+				DoorPoints.Add(FTransform(Rotation, SpawnLocationLeft));
 				DoorsSpawned++;
 				break;
 
@@ -135,15 +153,7 @@ void AFloor::SpawnWall(int x, int y)
 	}
 }
 
-void AFloor::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	int32 OtherBodyIndex, bool FromSweep, const FHitResult& SweepResult)
-{
-	APCGTestingCharacter* Player = Cast<APCGTestingCharacter>(OtherActor);
-	if(Player)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("New Room"));
-	}
-}
+
 
 
 // Called every frame
