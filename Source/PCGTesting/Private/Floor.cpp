@@ -4,6 +4,7 @@
 #include "Floor.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Math/Quat.h"
+#include "Math/UnitConversion.h"
 
 // Sets default values
 AFloor::AFloor()
@@ -25,6 +26,9 @@ AFloor::AFloor()
 void AFloor::BeginPlay()
 {
 	Super::BeginPlay();
+	NumberOfXTiles = FMath::RandRange(2,10);
+	NumberOfYTiles = FMath::RandRange(2,10);
+	MaxNumberOfDoors = FMath::RandRange(1,(NumberOfXTiles + NumberOfYTiles)/3);
 	SpawnFloor(NumberOfXTiles, NumberOfYTiles);
 }
 
@@ -59,12 +63,12 @@ void AFloor::SpawnWall(int x, int y)
 				case 0:
 					DoorMesh->AddInstance(FTransform(SpawnLocationTop));
 					WallMesh->AddInstance(FTransform(SpawnLocationBottom));
-				DoorsSpawned++;
+					DoorsSpawned++;
 					break;
 				case 1:
 					WallMesh->AddInstance(FTransform(SpawnLocationTop));
 					DoorMesh->AddInstance(FTransform(SpawnLocationBottom));
-				DoorsSpawned++;
+					DoorsSpawned++;
 					break;
 
 				default:
