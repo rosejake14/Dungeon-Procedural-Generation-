@@ -69,6 +69,8 @@ protected:
 	UFUNCTION()
 	void SetDefaultValues();
 
+	bool FirstWall = true;
+
 	
 private:
 

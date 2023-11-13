@@ -32,10 +32,10 @@ void AFloor::BeginPlay()
 	
 	SpawnFloor(NumberOfXTiles, NumberOfYTiles);
 
-	for(int i = 0; i < 5; i++)
+	for(int i = 0; i < 3; i++)
 	{
-		Origin.SetLocation(FVector3d(DoorPoints[0].GetLocation()));
-     	Origin.SetRotation(DoorPoints[i].GetRotation());
+		Origin.SetLocation(FVector3d(DoorPoints[DoorPoints.Num()-1].GetLocation()));
+     	Origin.SetRotation(DoorPoints[DoorPoints.Num()-1].GetRotation());
      	SetDefaultValues();
 		
      	SpawnFloor(NumberOfXTiles, NumberOfYTiles);
@@ -116,40 +116,47 @@ void AFloor::SpawnWall(int x, int y)
 		FVector SpawnLocationLeft = FVector(Origin.GetLocation().X + Length * x, Origin.GetLocation().Y + Width * j, Origin.GetLocation().Z);
 		// Use a quaternion to rotate the walls to be vertical
 		FQuat Rotation = FQuat::MakeFromEuler(FVector(0, 0, 90)); // 90-degree rotation around the Z-axis
-		
-		if (DoorsSpawned <= MaxNumberOfDoors)
+		if(FirstWall)
 		{
-			int randomNumber = rand() % 3;
-			
-			switch (randomNumber)
-			{
-			case 0:
-				DoorMesh->AddInstance(FTransform(Rotation,SpawnLocationRight));
-				DoorPoints.Add(FTransform(Rotation, SpawnLocationRight));
-				
-				WallMesh->AddInstance(FTransform(Rotation,SpawnLocationLeft));
-				DoorsSpawned++;
-				break;
-			case 1:
-				WallMesh->AddInstance(FTransform(Rotation,SpawnLocationRight));
-				
-				DoorMesh->AddInstance(FTransform(Rotation,SpawnLocationLeft));
-				DoorPoints.Add(FTransform(Rotation, SpawnLocationLeft));
-				DoorsSpawned++;
-				break;
-
-			default:
-				WallMesh->AddInstance(FTransform(Rotation,SpawnLocationRight));
-				WallMesh->AddInstance(FTransform(Rotation,SpawnLocationLeft));
-				break; 
-			}
-			
-		}
-		else
-		{
-			WallMesh->AddInstance(FTransform(Rotation,SpawnLocationRight));
 			WallMesh->AddInstance(FTransform(Rotation,SpawnLocationLeft));
-		}
+			FirstWall = false;
+		}else
+		{
+			if (DoorsSpawned <= MaxNumberOfDoors)
+			{
+			
+				int randomNumber = rand() % 3;
+			
+				switch (randomNumber)
+				{
+				case 0:
+					DoorMesh->AddInstance(FTransform(Rotation,SpawnLocationRight));
+					DoorPoints.Add(FTransform(Rotation, SpawnLocationRight));
+				
+					WallMesh->AddInstance(FTransform(Rotation,SpawnLocationLeft));
+					DoorsSpawned++;
+					break;
+				case 1:
+					WallMesh->AddInstance(FTransform(Rotation,SpawnLocationRight));
+				
+					DoorMesh->AddInstance(FTransform(Rotation,SpawnLocationLeft));
+					DoorPoints.Add(FTransform(Rotation, SpawnLocationLeft));
+					DoorsSpawned++;
+					break;
+
+				default:
+					WallMesh->AddInstance(FTransform(Rotation,SpawnLocationRight));
+					WallMesh->AddInstance(FTransform(Rotation,SpawnLocationLeft));
+					break; 
+				}
+			
+			}
+			else
+			{
+				WallMesh->AddInstance(FTransform(Rotation,SpawnLocationRight));
+				WallMesh->AddInstance(FTransform(Rotation,SpawnLocationLeft));
+			}
+		}	
 	}
 }
 
