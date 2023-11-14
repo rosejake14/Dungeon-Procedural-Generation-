@@ -2,6 +2,8 @@
 
 
 #include "PCGTesting/public/Door.h"
+
+#include "Components/ArrowComponent.h"
 #include "Components/BoxComponent.h"
 #include "PCGTesting/PCGTestingCharacter.h"
 
@@ -15,7 +17,9 @@ ADoor::ADoor()
 
 	DoorCollision = CreateDefaultSubobject<UBoxComponent>("Collision");
 	DoorCollision->SetupAttachment(DoorMesh);
-	
+
+	Arrow = CreateDefaultSubobject<UArrowComponent>("Arrow");
+	Arrow->SetupAttachment(DoorMesh);
 	
 }
 

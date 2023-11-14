@@ -5,6 +5,7 @@
 #include "Floor.generated.h"
 
 class UInstancedStaticMeshComponent;
+class ADoor;
 
 UCLASS()
 class PCGTESTING_API AFloor : public AActor
@@ -29,6 +30,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	float Height = 400.f;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> Door;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -47,6 +51,9 @@ protected:
 
 	UFUNCTION()
 	void SpawnFloor(int x, int y);
+	UFUNCTION()
+	bool ShouldSkipWallSpawn(const FQuat& Rotation, const FVector& LocationLeft, const FVector& LocationRight);
+	bool QuaternionAlmostEqual(const FQuat& QuatA, const FQuat& QuatB, float Tolerance);
 
 	UFUNCTION()
 	void SpawnWall(int x, int y);
@@ -66,6 +73,8 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	TArray<FTransform> DoorPoints;
 
+	UPROPERTY(EditAnywhere)
+	int Iterations = 3;
 	UFUNCTION()
 	void SetDefaultValues();
 
