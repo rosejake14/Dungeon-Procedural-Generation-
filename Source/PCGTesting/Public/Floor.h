@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -15,6 +16,8 @@ class PCGTESTING_API AFloor : public AActor
 public:	
 	AFloor();
 	virtual void Tick(float DeltaTime) override;
+	void SpawnProceduralRoom();
+	bool HasCollision(const FVector& TestLocation);
 
 	UPROPERTY(EditAnywhere)
 	int NumberOfXTiles = 1;
@@ -40,6 +43,8 @@ protected:
 	UPROPERTY(EditAnywhere)
 	UInstancedStaticMeshComponent* FloorMesh;
 
+	
+
 	UPROPERTY(EditAnywhere)
 	UInstancedStaticMeshComponent* WallMesh;
 
@@ -51,9 +56,10 @@ protected:
 
 	UFUNCTION()
 	void SpawnFloor(int x, int y);
+
 	UFUNCTION()
-	bool ShouldSkipWallSpawn(const FQuat& Rotation, const FVector& LocationLeft, const FVector& LocationRight);
-	bool QuaternionAlmostEqual(const FQuat& QuatA, const FQuat& QuatB, float Tolerance);
+	void DetectType();
+
 
 	UFUNCTION()
 	void SpawnWall(int x, int y);
@@ -72,6 +78,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	TArray<FTransform> DoorPoints;
+
+	UPROPERTY(VisibleAnywhere)
+	TArray<FTransform> FloorPoints;
 
 	UPROPERTY(EditAnywhere)
 	int Iterations = 3;

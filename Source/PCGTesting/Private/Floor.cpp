@@ -1,3 +1,4 @@
+
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
@@ -5,8 +6,6 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Math/Quat.h"
 #include "Door.h"
-#include "Components/BoxComponent.h"
-
 
 // Sets default values
 AFloor::AFloor()
@@ -32,16 +31,18 @@ void AFloor::BeginPlay()
 	Super::BeginPlay();
 	Origin.SetLocation(FVector3d(GetActorLocation()));
 	SetDefaultValues();
-
+	
 	SpawnFloor(NumberOfXTiles, NumberOfYTiles);
+	UE_LOG(LogTemp, Warning, TEXT("Room Spawned"))
 
 	for (int i = 0; i < Iterations; i++)
 	{
 		Origin.SetLocation(FVector3d(DoorPoints[DoorPoints.Num() - 1].GetLocation()));
-		Origin.SetRotation(DoorPoints[DoorPoints.Num() - 1].GetRotation());
+		Origin.SetRotation(-DoorPoints[DoorPoints.Num()].GetRotation());
 		SetDefaultValues();
-
+		UE_LOG(LogTemp, Warning, TEXT("Preparing to Spawn"))
 		SpawnFloor(NumberOfXTiles, NumberOfYTiles);
+		UE_LOG(LogTemp, Warning, TEXT("Room Spawned"))
 	}
 }
 
@@ -49,7 +50,7 @@ void AFloor::SetDefaultValues()
 {
 	NumberOfXTiles = FMath::RandRange(2, 10);
 	NumberOfYTiles = FMath::RandRange(2, 10);
-	MaxNumberOfDoors = FMath::RandRange(1, (NumberOfXTiles + NumberOfYTiles) / 3);
+	MaxNumberOfDoors = FMath::RandRange(1, MaxNumberOfDoors);
 	DoorsSpawned = 0;
 	FirstWall = true;
 	DoorPoints.Reset();
@@ -64,25 +65,19 @@ void AFloor::SpawnFloor(int x, int y)
 			SpawnPoint.SetLocation(FVector3d(Origin.GetLocation().X + Length * i, Origin.GetLocation().Y + Width * j,
 			                                 Origin.GetLocation().Z));
 			FloorMesh->AddInstance(SpawnPoint);
+			FloorPoints.Add(SpawnPoint);
 			//SpawnPoint.SetLocation(FVector3d(Origin.GetLocation().X + Length*i,Origin.GetLocation().Y + Width*j,Origin.GetLocation().Z + Height));
 			//FloorMesh->AddInstance(SpawnPoint);
 		}
 	}
 	SpawnWall(NumberOfXTiles, NumberOfYTiles);
 }
-bool AFloor::ShouldSkipWallSpawn(const FQuat& Rotation, const FVector& LocationLeft, const FVector& LocationRight)
-{
-	const float Tolerance = 0.001;
 
-	return DoorPoints.ContainsByPredicate(
-		[LocationLeft, LocationRight, Rotation, Tolerance](const FTransform& TransformInArray)
-		{
-			return
-				FVector::DistSquared(TransformInArray.GetLocation(), LocationLeft) < Tolerance ||
-				FVector::DistSquared(TransformInArray.GetLocation(), LocationRight) < Tolerance;
-				
-       });
+void AFloor::DetectType()
+{
 }
+
+
 
 void AFloor::SpawnWall(int x, int y)
 {
@@ -92,14 +87,29 @@ void AFloor::SpawnWall(int x, int y)
 	
 	for (int i = 0; i < x; i++) // Spawn horizontal walls
 	{
-		FVector SpawnLocationTop = FVector(Origin.GetLocation().X + Length * i, Origin.GetLocation().Y,
+		FVector SpawnLocationTop = FVector(Origin.GetLocation().X + Length * i + Length, Origin.GetLocation().Y,
 		                                   Origin.GetLocation().Z);
 		FVector SpawnLocationBottom = FVector(Origin.GetLocation().X + Length * i, Origin.GetLocation().Y + Width * y,
 		                                      Origin.GetLocation().Z);
-		FQuat Rotation = FQuat::MakeFromEuler(FVector(Origin.GetRotation().X, Origin.GetRotation().Y, Origin.GetRotation().Z)); 
+		FQuat RotationTop = FQuat::MakeFromEuler(FVector(0, 0, 180));
+		FQuat RotationBottom = FQuat::MakeFromEuler(FVector(0, 0, 0));
+		bool SpawnTop = true; bool SpawnBottom = true;
+
 		
-		if(!ShouldSkipWallSpawn(Rotation, SpawnLocationTop, SpawnLocationBottom))
+		for (int k = 0; k < DoorPoints.Num(); k++)
 		{
+			if(FTransform(SpawnLocationTop).Equals(DoorPoints[k]) )
+			{
+				SpawnTop = false;
+			}
+			if(FTransform(SpawnLocationBottom).Equals(DoorPoints[k]))
+			{
+				SpawnBottom = false;
+			}
+		}
+		
+		
+		
 			if (DoorsSpawned <= MaxNumberOfDoors)
 			{
 				int randomNumber = rand() % 3;
@@ -107,51 +117,89 @@ void AFloor::SpawnWall(int x, int y)
 				switch (randomNumber)
 				{
 				case 0:
-					WallMesh->AddInstance(FTransform(Rotation, SpawnLocationBottom));
-
-					GetWorld()->SpawnActor<ADoor>(Door, FTransform(Rotation, SpawnLocationTop), SpawnParameters);
-					DoorPoints.Add(FTransform(Rotation, SpawnLocationTop));
-					DoorsSpawned++;
+					if(SpawnBottom)
+					{
+						WallMesh->AddInstance(FTransform(RotationBottom, SpawnLocationBottom));
+					}
+					if(SpawnTop)
+					{
+						GetWorld()->SpawnActor<ADoor>(Door, FTransform(RotationTop, SpawnLocationTop), SpawnParameters);
+						DoorPoints.Add(FTransform(RotationTop, SpawnLocationTop));
+						DoorsSpawned++;
+					}
 					break;
 				case 1:
-					WallMesh->AddInstance(FTransform(Rotation, SpawnLocationTop));
+					if(SpawnTop)
+					{
+						WallMesh->AddInstance(FTransform(RotationTop, SpawnLocationTop));
+					}
+					if (SpawnBottom)
+					{
+						GetWorld()->SpawnActor<ADoor>(Door, FTransform(RotationBottom, SpawnLocationBottom), SpawnParameters);
+						DoorPoints.Add(FTransform(RotationBottom, SpawnLocationBottom));
+						DoorsSpawned++;
+					}
 
-					GetWorld()->SpawnActor<ADoor>(Door, FTransform(Rotation, SpawnLocationBottom), SpawnParameters);
-					DoorPoints.Add(FTransform(Rotation, SpawnLocationBottom));
-					DoorsSpawned++;
+					
 					break;
 
 				default:
-					WallMesh->AddInstance(FTransform(Rotation, SpawnLocationTop));
-					WallMesh->AddInstance(FTransform(Rotation, SpawnLocationBottom));
+					if(SpawnTop)
+					{
+						WallMesh->AddInstance(FTransform(RotationTop, SpawnLocationTop));
+					}
+					if (SpawnBottom)
+					{
+						WallMesh->AddInstance(FTransform(RotationBottom, SpawnLocationBottom));
+					}
 					break;
 				}
 			}
 			else
 			{
-				WallMesh->AddInstance(FTransform(Rotation, SpawnLocationTop));
-				WallMesh->AddInstance(FTransform(Rotation, SpawnLocationBottom));
+				if(SpawnTop)
+				{
+					WallMesh->AddInstance(FTransform(RotationTop, SpawnLocationTop));
+				}
+				if (SpawnBottom)
+				{
+					WallMesh->AddInstance(FTransform(RotationBottom, SpawnLocationBottom));
+				}
 			}
-		}
+		
 	}
 
 	for (int j = 0; j < y; j++) // Spawn vertical walls
 	{
 		FVector SpawnLocationRight = FVector(Origin.GetLocation().X, Origin.GetLocation().Y + Width * j,
 		                                     Origin.GetLocation().Z);
-		FVector SpawnLocationLeft = FVector(Origin.GetLocation().X + Length * x, Origin.GetLocation().Y + Width * j,
+		FVector SpawnLocationLeft = FVector(Origin.GetLocation().X + Length * x, Origin.GetLocation().Y + Width * j + Width,
 		                                    Origin.GetLocation().Z);
 		
 		// Use a quaternion to rotate the walls to be vertical
-		FQuat Rotation = FQuat::MakeFromEuler(FVector(Origin.GetRotation().X, Origin.GetRotation().Y, Origin.GetRotation().Z + 90)); // 90-degree rotation around the Z-axis
-		if (FirstWall)
+		FQuat RotationRight = FQuat::MakeFromEuler(FVector(0, 0, 90));
+		FQuat RotationLeft = FQuat::MakeFromEuler(FVector(0, 0, -90));
+		// 90-degree rotation around the Z-axis
+		// if (FirstWall)
+		// {
+		// 	WallMesh->AddInstance(FTransform(Rotation, SpawnLocationLeft));
+		// 	FirstWall = false;
+		// }
+		bool SpawnLeft = true; bool SpawnRight = true;
+
+		
+		for (int k = 0; k < DoorPoints.Num(); k++)
 		{
-			WallMesh->AddInstance(FTransform(Rotation, SpawnLocationLeft));
-			FirstWall = false;
+			if(FTransform(SpawnLocationRight).Equals(DoorPoints[k]))
+			{
+				SpawnRight = false;
+			}
+			if(FTransform(SpawnLocationLeft).Equals(DoorPoints[k]))
+			{
+				SpawnLeft = false;
+			}
 		}
 		
-		else if(!ShouldSkipWallSpawn(Rotation, SpawnLocationLeft, SpawnLocationRight))
-		{
 			if (DoorsSpawned <= MaxNumberOfDoors)
 			{
 				int randomNumber = rand() % 3;
@@ -159,33 +207,54 @@ void AFloor::SpawnWall(int x, int y)
 				switch (randomNumber)
 				{
 				case 0:
-					GetWorld()->SpawnActor<ADoor>(Door, FTransform(Rotation, SpawnLocationRight), SpawnParameters);
-
-					DoorPoints.Add(FTransform(Rotation, SpawnLocationRight));
-
-					WallMesh->AddInstance(FTransform(Rotation, SpawnLocationLeft));
-					DoorsSpawned++;
+					if(SpawnLeft)
+					{
+						WallMesh->AddInstance(FTransform(RotationLeft, SpawnLocationLeft));
+					}
+					if (SpawnRight)
+					{
+						GetWorld()->SpawnActor<ADoor>(Door, FTransform(RotationRight, SpawnLocationRight), SpawnParameters);
+						DoorPoints.Add(FTransform(RotationRight, SpawnLocationRight));
+						DoorsSpawned++;
+					}
 					break;
 				case 1:
-					WallMesh->AddInstance(FTransform(Rotation,SpawnLocationRight));
-
-					GetWorld()->SpawnActor<ADoor>(Door, FTransform(Rotation, SpawnLocationLeft), SpawnParameters);
-					DoorPoints.Add(FTransform(Rotation, SpawnLocationLeft));
-					DoorsSpawned++;
+					if(SpawnLeft)
+					{
+						GetWorld()->SpawnActor<ADoor>(Door, FTransform(RotationLeft, SpawnLocationLeft), SpawnParameters);
+                        DoorPoints.Add(FTransform(RotationLeft, SpawnLocationLeft));
+                        DoorsSpawned++;
+					}
+					if (SpawnRight)
+					{
+						WallMesh->AddInstance(FTransform(RotationRight,SpawnLocationRight));
+					}
 					break;
 
 				default:
-					WallMesh->AddInstance(FTransform(Rotation, SpawnLocationRight));
-					WallMesh->AddInstance(FTransform(Rotation, SpawnLocationLeft));
+					if(SpawnLeft)
+					{
+						WallMesh->AddInstance(FTransform(RotationLeft, SpawnLocationLeft));
+					}
+					if (SpawnRight)
+					{
+						WallMesh->AddInstance(FTransform(RotationRight, SpawnLocationRight));
+					}
 					break;
 				}
 			}
 			else
 			{
-				WallMesh->AddInstance(FTransform(Rotation, SpawnLocationRight));
-				WallMesh->AddInstance(FTransform(Rotation, SpawnLocationLeft));
+				if(SpawnLeft)
+				{
+					WallMesh->AddInstance(FTransform(RotationLeft, SpawnLocationLeft));
+				}
+				if (SpawnRight)
+				{
+					WallMesh->AddInstance(FTransform(RotationRight, SpawnLocationRight));
+				}
 			}
-		}
+		
 	}
 }
 
@@ -194,4 +263,23 @@ void AFloor::SpawnWall(int x, int y)
 void AFloor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+bool AFloor::HasCollision(const FVector& TestLocation)
+{
+    // Check for collision with existing rooms
+    for (const FTransform& ExistingRoom : FloorPoints)
+    {
+        FVector ExistingRoomLocation = ExistingRoom.GetLocation();
+        FVector Extent = FVector(Length / 2, Width / 2, Height / 2); // Adjust the extent based on your room dimensions
+
+        if (FMath::Abs(ExistingRoomLocation.X - TestLocation.X) < Extent.X &&
+            FMath::Abs(ExistingRoomLocation.Y - TestLocation.Y) < Extent.Y)
+        {
+            // Collision detected
+            return true;
+        }
+    }
+
+    return false;
 }
