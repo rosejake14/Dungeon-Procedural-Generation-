@@ -58,10 +58,10 @@ void ARoomSpawner::SpawnFloors()
 
 void ARoomSpawner::SpawnLRWalls()
 {
-	FQuat RotationLeft = FQuat::MakeFromEuler(FVector(0, 0, 0));
-	FQuat RotationBottom = FQuat::MakeFromEuler(FVector(0, 0, 90));
-	FQuat RotationRight = FQuat::MakeFromEuler(FVector(0, 0, 180));
-	FQuat RotationTop = FQuat::MakeFromEuler(FVector(0, 0, -90));
+	FQuat RotationLeft = FQuat::MakeFromEuler(FVector(0, 0, 90));
+	FQuat RotationBottom = FQuat::MakeFromEuler(FVector(0, 0, 0));
+	FQuat RotationRight = FQuat::MakeFromEuler(FVector(0, 0, -90));
+	FQuat RotationTop = FQuat::MakeFromEuler(FVector(0, 0, 180));
 	
 	WallISMComp->SetStaticMesh(WallMesh);
 	

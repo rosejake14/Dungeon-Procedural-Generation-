@@ -16,8 +16,6 @@ class PCGTESTING_API AFloor : public AActor
 public:	
 	AFloor();
 	virtual void Tick(float DeltaTime) override;
-	void SpawnProceduralRoom();
-	bool HasCollision(const FVector& TestLocation);
 
 	UPROPERTY(EditAnywhere)
 	int NumberOfXTiles = 1;
@@ -58,16 +56,12 @@ protected:
 	void SpawnFloor(int x, int y);
 
 	UFUNCTION()
-	void DetectType();
-
-
-	UFUNCTION()
 	void SpawnWall(int x, int y);
 
 	UPROPERTY(VisibleAnywhere)
 	FTransform SpawnPoint;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere)
 	FTransform Origin;
 
 	UPROPERTY(EditAnywhere)
