@@ -3,6 +3,7 @@
 
 ## Additional Information
 This is a procedural dungeon generator to randomly spawn different-sized rooms across the local world.
+![pcg](https://github.com/rosejake14/Dungeon-Procedural-Generation-/assets/62072145/f8bb44c9-76f4-4fd9-90a8-9768d2eb33ce)
 
 ## Getting Started
 Below are instructions on downloading and running the game for Unreal Engine. 
@@ -28,4 +29,5 @@ For development & testing purposes:
 
 ## Authors
 - Jake Rose - Programmer
+
 
