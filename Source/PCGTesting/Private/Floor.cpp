@@ -36,7 +36,8 @@ void AFloor::BeginPlay()
 
 	SpawnFloor(NumberOfXTiles, NumberOfYTiles);
 	UE_LOG(LogTemp, Warning, TEXT("Room Spawned"))
-
+	FirstRoom = false;
+	
 	for (int i = 0; i < Iterations; i++)
 	{
 		Origin.SetLocation(FVector3d(DoorPoints[DoorPoints.Num() - 1].GetLocation().X, DoorPoints[DoorPoints.Num() - 1].GetLocation().Y -400,DoorPoints[DoorPoints.Num() - 1].GetLocation().Z));
@@ -53,7 +54,7 @@ void AFloor::SetDefaultValues()
 {
 	NumberOfXTiles = FMath::RandRange(2, 10);
 	NumberOfYTiles = FMath::RandRange(2, 10);
-	MaxNumberOfDoors = FMath::RandRange(1, MaxNumberOfDoors);
+	//MaxNumberOfDoors = FMath::RandRange(1, MaxNumberOfDoors);
 	DoorsSpawned = 0;
 	FirstWall = true;
 	DoorPoints.Reset();
@@ -68,8 +69,8 @@ void AFloor::SpawnFloor(int x, int y)
 			SpawnPoint.SetLocation(FVector3d(Origin.GetLocation().X + Length * i, Origin.GetLocation().Y + Width * j, Origin.GetLocation().Z));
 			FloorMesh->AddInstance(SpawnPoint);
 			FloorPoints.Add(SpawnPoint);
-			//SpawnPoint.SetLocation(FVector3d(Origin.GetLocation().X + Length*i,Origin.GetLocation().Y + Width*j,Origin.GetLocation().Z + Height));
-			//FloorMesh->AddInstance(SpawnPoint);
+			SpawnPoint.SetLocation(FVector3d(Origin.GetLocation().X + Length*i,Origin.GetLocation().Y + Width*j,Origin.GetLocation().Z + Height));
+			FloorMesh->AddInstance(SpawnPoint);
 		}
 	}
 	SpawnWall(NumberOfXTiles, NumberOfYTiles);
@@ -105,7 +106,7 @@ void AFloor::SpawnWall(int x, int y)
 		}
 
 
-		if (DoorsSpawned <= MaxNumberOfDoors)
+		if (DoorsSpawned < MaxNumberOfDoors)
 		{
 			int randomNumber = 3;//rand() % 3;
 
@@ -175,7 +176,7 @@ void AFloor::SpawnWall(int x, int y)
 		// Use a quaternion to rotate the walls to be vertical
 		FQuat RotationRight = FQuat::MakeFromEuler(FVector(0, 0, 90));
 		FQuat RotationLeft = FQuat::MakeFromEuler(FVector(0, 0, -90)); //90-degree rotation around the Z-axis
-		if (FirstWall)
+		if (FirstWall && !FirstRoom)
 		{
 			WallMesh->AddInstance(FTransform(RotationLeft, SpawnLocationLeft));
 			FirstWall = false;
@@ -197,10 +198,10 @@ void AFloor::SpawnWall(int x, int y)
 				}
 			}
 
-			if (DoorsSpawned <= MaxNumberOfDoors)
+			if (DoorsSpawned < MaxNumberOfDoors)
 			{
 				int randomNumber = rand() % 3;
-				if(j=y-1)
+				if(j == y - 1)
 				{
 					randomNumber = 0;
 				}

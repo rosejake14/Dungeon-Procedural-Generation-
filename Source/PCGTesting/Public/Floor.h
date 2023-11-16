@@ -82,6 +82,7 @@ protected:
 	void SetDefaultValues();
 
 	bool FirstWall = true;
+	bool FirstRoom = true;
 
 	
 private:
