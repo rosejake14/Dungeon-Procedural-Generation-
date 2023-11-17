@@ -44,7 +44,7 @@ void AFloor::BeginPlay()
 		FQuat RotationOrigin = FQuat::MakeFromEuler(FVector(DoorPoints[DoorPoints.Num() - 1].GetRotation().X,DoorPoints[DoorPoints.Num() - 1].GetRotation().Y, DoorPoints[DoorPoints.Num() - 1].GetRotation().Z + 90));
 		Origin.SetRotation(RotationOrigin);
 		SetDefaultValues();
-		UE_LOG(LogTemp, Warning, TEXT("Preparing to Spawn"))
+		UE_LOG(LogTemp, Warning, TEXT("Preparing to Spawn new Room"))
 		SpawnFloor(NumberOfXTiles, NumberOfYTiles);
 		UE_LOG(LogTemp, Warning, TEXT("Room Spawned"))
 	}
@@ -58,6 +58,7 @@ void AFloor::SetDefaultValues()
 	DoorsSpawned = 0;
 	FirstWall = true;
 	DoorPoints.Reset();
+	//RootComponent->SetWorldRotation(FQuat::MakeFromEuler(FVector(0, 0, -90)));
 }
 
 void AFloor::SpawnFloor(int x, int y)
@@ -66,7 +67,9 @@ void AFloor::SpawnFloor(int x, int y)
 	{
 		for (int j = 0; j < y; j++)
 		{
+			FQuat Rotation = FQuat::MakeFromEuler(FVector(0, 0, Origin.GetRotation().Z));
 			SpawnPoint.SetLocation(FVector3d(Origin.GetLocation().X + Length * i, Origin.GetLocation().Y + Width * j, Origin.GetLocation().Z));
+			//SpawnPoint.SetRotation(Rotation);
 			FloorMesh->AddInstance(SpawnPoint);
 			FloorPoints.Add(SpawnPoint);
 			SpawnPoint.SetLocation(FVector3d(Origin.GetLocation().X + Length*i,Origin.GetLocation().Y + Width*j,Origin.GetLocation().Z + Height));
@@ -89,6 +92,7 @@ void AFloor::SpawnWall(int x, int y)
 		                                      Origin.GetLocation().Z);
 		FQuat RotationTop = FQuat::MakeFromEuler(FVector(0, 0, 180));
 		FQuat RotationBottom = FQuat::MakeFromEuler(FVector(0, 0, 0));
+		
 		bool SpawnTop = true;
 		bool SpawnBottom = true;
 
@@ -109,7 +113,11 @@ void AFloor::SpawnWall(int x, int y)
 		if (DoorsSpawned < MaxNumberOfDoors)
 		{
 			int randomNumber = 3;//rand() % 3;
-
+			//if(i == x - 1)
+			//{
+			//	randomNumber = 0;
+			//}
+			
 			switch (randomNumber)
 			{
 			case 0:
@@ -174,8 +182,8 @@ void AFloor::SpawnWall(int x, int y)
 		                                    Origin.GetLocation().Z);
 
 		// Use a quaternion to rotate the walls to be vertical
-		FQuat RotationRight = FQuat::MakeFromEuler(FVector(0, 0, 90));
-		FQuat RotationLeft = FQuat::MakeFromEuler(FVector(0, 0, -90)); //90-degree rotation around the Z-axis
+		FQuat RotationRight = FQuat::MakeFromEuler(FVector(0, 0, Origin.GetRotation().Z + 90));
+		FQuat RotationLeft = FQuat::MakeFromEuler(FVector(0, 0, Origin.GetRotation().Z - 90)); //90-degree rotation around the Z-axis
 		if (FirstWall && !FirstRoom)
 		{
 			WallMesh->AddInstance(FTransform(RotationLeft, SpawnLocationLeft));
