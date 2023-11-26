@@ -61,7 +61,6 @@ void AGenerator::GenerateMap()
 	
 	FVector LocationOut;
 	FVector Extents;
-	TMap<FVector, FVector> Rooms;
 	TArray<FVector> FloorTilesIn;
 	UE_LOG(LogTemp, Warning, TEXT("Generating Map..."));
 	for(int i = 0; i < RoomCount; i++)
@@ -304,6 +303,55 @@ void AGenerator::FindNextLocation(bool &Valid, FVector &NewLocationtoSpawn)
 	Valid = ValidTileLocation;
 	NewLocationtoSpawn = NewLocation;
 }
+
+void AGenerator::CreateCorridors(FVector RoomA, FVector RoomB)
+{
+	//---------------Get Corners.--------------- 
+		int32 aX = RoomA.X;
+		int32 aXopp = Rooms.Find(RoomA)->X;
+		int32 aY = RoomA.Y;
+		int32 aYopp = Rooms.Find(RoomA)->Y;
+		int32 aZ = RoomA.Z;
+		int32 aZopp = Rooms.Find(RoomA)->Z;
+	
+		int32 bX = RoomB.X;
+		int32 bXopp = Rooms.Find(RoomB)->X;
+		int32 bY = RoomB.Y;
+		int32 bYopp = Rooms.Find(RoomB)->Y;
+		int32 bZ = RoomB.Z;
+		int32 bZopp = Rooms.Find(RoomB)->Z;
+	/* aX is the first corner of the room,
+	 * aXopp is the opposite far corner of the room.
+	 * ------------------------------------------*/
+
+	int32 OutputX;
+	FVector PointA;
+	FVector PointB;
+
+	
+	if(FMath::Max(aX, bX) <= FMath::Min(aXopp, bXopp)) //Are rooms parallel to X with overlapping sides.
+	{
+		if(bY > aY) //Is Room B is to the Right
+		{
+			if(bY - aYopp > 1) //Are Rooms merged?
+			{
+				OutputX = Stream.RandRange(FMath::Max(aX, bX), FMath::Min(aXopp, bXopp));//Make Corridor from A to B on Y Axis
+				PointA = FVector(OutputX, aYopp, aZ); 
+				PointB = FVector(OutputX, bY, bZ);
+			}
+		}else
+		{
+			if(aY - bYopp > 1) //Are Rooms merged?
+				{
+				OutputX = Stream.RandRange(FMath::Max(aX, bX), FMath::Min(aXopp, bXopp));//Make Corridor from B to A on Y Axis
+				PointA = FVector(OutputX, aY, aZ); 
+				PointB = FVector(OutputX, bYopp, bZ);
+				}
+		}
+	}
+	
+}
+
 
 void AGenerator::TestRelativeLocation(FVector ReferenceLocation,TArray<FVector> TestArray, int32 X, int32 Y, FVector &Location, bool &isPresentTile)
 { //Check if Tile relative to Reference has an existing floor tile.

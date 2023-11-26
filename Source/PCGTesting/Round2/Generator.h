@@ -25,6 +25,7 @@ protected:
 	void MakeFloor(FVector Location, TArray<FVector> &FloorTilesIn, FVector &LocationOut, FVector &Extents);
 	void SpawnTiles();
 	void FindNextLocation(bool &Valid, FVector &NewLocationtoSpawn);
+	void CreateCorridors(FVector RoomA, FVector RoomB);
 	void TestRelativeLocation(FVector ReferenceLocation, TArray<FVector> TestArray, int32 X, int32 Y, FVector &Location, bool &isPresentTile);
 
 	UPROPERTY(EditAnywhere)
@@ -73,7 +74,7 @@ protected:
 	bool isFloorTile;
 	bool ValidTileLocation = false;
 	FVector NewLocation;
-	
+	TMap<FVector, FVector> Rooms;
 
 };
 
