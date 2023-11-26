@@ -25,10 +25,12 @@ protected:
 	void MakeFloor(FVector Location, TArray<FVector> &FloorTilesIn, FVector &LocationOut, FVector &Extents);
 	void SpawnTiles();
 	void FindNextLocation(bool &Valid, FVector &NewLocationtoSpawn);
-	void CreateCorridors(FVector RoomA, FVector RoomB);
+	void CreateCorridors(FVector RoomA, FVector RoomB, TArray<FVector>& CorridorTilesReturn);
+	void SpawnCorridorsY(FVector Start, FVector Finish, TArray<FVector>& FloorTilesReturn);
+	void SpawnCorridorsX(FVector Start, FVector Finish, TArray<FVector> &FloorTilesReturn);
 	void TestRelativeLocation(FVector ReferenceLocation, TArray<FVector> TestArray, int32 X, int32 Y, FVector &Location, bool &isPresentTile);
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	int32 Seed;
 	UPROPERTY(EditAnywhere, Category = " ")
 	int32 RoomSizeMin;
@@ -48,7 +50,7 @@ protected:
 	int32 MaxLoops = 10;
 	UPROPERTY(EditAnywhere, Category = " ");
 	bool NewSeed;
-	UPROPERTY(EditAnywhere);
+	UPROPERTY(VisibleAnywhere);
 	FRandomStream Stream;
 	UPROPERTY(EditAnywhere);
 	float Scale;
@@ -58,7 +60,7 @@ protected:
 	bool Merging;
 	UPROPERTY(EditAnywhere)
 	bool Branching;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	TArray<FVector> FloorTiles;
 	UPROPERTY(EditAnywhere)
 	UInstancedStaticMeshComponent* FloorISMC;
@@ -68,13 +70,16 @@ protected:
 	USceneComponent* Root = nullptr;
 	UPROPERTY(EditAnywhere)
 	bool Working = true;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	FVector PreviousLocation;
 
 	bool isFloorTile;
 	bool ValidTileLocation = false;
 	FVector NewLocation;
+	UPROPERTY(VisibleAnywhere)
 	TMap<FVector, FVector> Rooms;
+	TArray<FVector> CorridorTiles;
+	FVector NextLocation;
 
 };
 

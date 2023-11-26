@@ -62,6 +62,7 @@ void AGenerator::GenerateMap()
 	FVector LocationOut;
 	FVector Extents;
 	TArray<FVector> FloorTilesIn;
+	TArray<FVector> CorridorTilesIn;
 	UE_LOG(LogTemp, Warning, TEXT("Generating Map..."));
 	for(int i = 0; i < RoomCount; i++)
 	{
@@ -74,7 +75,6 @@ void AGenerator::GenerateMap()
 		}else
 		{
 			bool Valid;
-			FVector NextLocation;
 			FindNextLocation(Valid, NextLocation);
 			if(Valid == true)
 			{
@@ -82,7 +82,12 @@ void AGenerator::GenerateMap()
 				FloorTiles.Append(FloorTilesIn);
 				Rooms.Add(LocationOut, Extents);
 				UE_LOG(LogTemp, Warning, TEXT("Another Room Added"));
-				PreviousLocation = NextLocation;
+				
+				CreateCorridors(PreviousLocation, NextLocation, CorridorTilesIn); //Make Corridor Between Last 2 Rooms.
+				CorridorTiles.Append(CorridorTilesIn); 
+				
+
+				PreviousLocation = NextLocation; //Update location for next room.
 			}
 		}
 	}
@@ -207,9 +212,10 @@ void AGenerator::SpawnTiles()
 	bool isFloorF, isFloorR, isFloorD, isFloorL;
 	UE_LOG(LogTemp, Warning, TEXT("Preparing Tiles."));
 	
+	FloorTiles.Append(CorridorTiles);
+	
 	for (auto Tile : FloorTiles)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Spawning Tiles."));
 		FloorISMC->AddInstance(FTransform(Tile * Scale));
 		
 		for(int i = 0; i < 3; i++)
@@ -304,7 +310,7 @@ void AGenerator::FindNextLocation(bool &Valid, FVector &NewLocationtoSpawn)
 	NewLocationtoSpawn = NewLocation;
 }
 
-void AGenerator::CreateCorridors(FVector RoomA, FVector RoomB)
+void AGenerator::CreateCorridors(FVector RoomA, FVector RoomB, TArray<FVector> &CorridorTilesReturn)
 {
 	//---------------Get Corners.--------------- 
 		int32 aX = RoomA.X;
@@ -325,9 +331,11 @@ void AGenerator::CreateCorridors(FVector RoomA, FVector RoomB)
 	 * ------------------------------------------*/
 
 	int32 OutputX;
+	int32 OutputY;
 	FVector PointA;
 	FVector PointB;
 
+	
 	
 	if(FMath::Max(aX, bX) <= FMath::Min(aXopp, bXopp)) //Are rooms parallel to X with overlapping sides.
 	{
@@ -338,25 +346,75 @@ void AGenerator::CreateCorridors(FVector RoomA, FVector RoomB)
 				OutputX = Stream.RandRange(FMath::Max(aX, bX), FMath::Min(aXopp, bXopp));//Make Corridor from A to B on Y Axis
 				PointA = FVector(OutputX, aYopp, aZ); 
 				PointB = FVector(OutputX, bY, bZ);
+				SpawnCorridorsY(PointA, PointB, CorridorTiles);
 			}
-		}else
+		}else //B is to the left
 		{
 			if(aY - bYopp > 1) //Are Rooms merged?
 				{
 				OutputX = Stream.RandRange(FMath::Max(aX, bX), FMath::Min(aXopp, bXopp));//Make Corridor from B to A on Y Axis
 				PointA = FVector(OutputX, aY, aZ); 
 				PointB = FVector(OutputX, bYopp, bZ);
+				SpawnCorridorsY(PointB, PointA, CorridorTiles);
 				}
 		}
-	}
-	
+	}else if(FMath::Max(aY, bY) <= FMath::Min(aYopp, bYopp)) //Are rooms parallel to Y with overlapping sides.
+		{
+		if(bX > aX) //Is Room B is forward
+			{
+			if(bX - aXopp > 1) //Are Rooms merged?
+				{
+				OutputY = Stream.RandRange(FMath::Max(aY, bY), FMath::Min(aYopp, bYopp));//Make Corridor from A to B on X Axis
+				PointA = FVector(aXopp, OutputY, aZ); 
+				PointB = FVector(bX, OutputY, bZ);
+				SpawnCorridorsX(PointA, PointB, CorridorTiles);
+				}
+			}else //A is Forward
+			{
+				if(aX - bXopp > 1) //Are Rooms merged?
+					{
+					OutputY = Stream.RandRange(FMath::Max(aY, bY), FMath::Min(aYopp, bYopp));//Make Corridor from B to A on X Axis
+					PointA = FVector(aX, OutputY, aZ); 
+					PointB = FVector(bXopp, OutputY, bZ);
+					SpawnCorridorsX(PointB, PointA, CorridorTiles);
+					}
+			}
+		}
+
+	CorridorTilesReturn = CorridorTiles;
 }
 
+void AGenerator::SpawnCorridorsY(FVector Start, FVector Finish, TArray<FVector> &FloorTilesReturn)
+{
+	TArray<FVector> Tiles;
+	
+	//for(int i = 0; i < FMath::Abs(Start.Y - Finish.Y) - 1; i++)
+	for (int i = FMath::Min(Start.Y, Finish.Y) + 1; i < FMath::Max(Start.Y, Finish.Y); i++)
+	{
+		Tiles.Add(FVector(Start.X, Start.Y + i, Start.Z));
+		UE_LOG(LogTemp, Warning, TEXT("Added Corridor on Y axis"))
+	}
+	
+	FloorTilesReturn = Tiles;
+}
+
+void AGenerator::SpawnCorridorsX(FVector Start, FVector Finish, TArray<FVector> &FloorTilesReturn)
+{
+	TArray<FVector> Tiles;
+	
+	//for(int i = 0; i < FMath::Abs(Start.X - Finish.X) - 1; i++)
+	for (int i = FMath::Min(Start.X, Finish.X) + 1; i < FMath::Max(Start.X, Finish.X); i++)
+    {
+		Tiles.Add(FVector(Start.X + i, Start.Y, Start.Z));
+		UE_LOG(LogTemp, Warning, TEXT("Added Corridor on X axis"))
+	}
+	
+	FloorTilesReturn = Tiles;
+}
 
 void AGenerator::TestRelativeLocation(FVector ReferenceLocation,TArray<FVector> TestArray, int32 X, int32 Y, FVector &Location, bool &isPresentTile)
 { //Check if Tile relative to Reference has an existing floor tile.
 	Location = FVector(ReferenceLocation.X + X,ReferenceLocation.Y + Y,ReferenceLocation.Z);
 	isPresentTile = TestArray.Contains(Location);
 
-	//1:13:51
 }
