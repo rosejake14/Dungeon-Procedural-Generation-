@@ -78,8 +78,10 @@ protected:
 	FVector NewLocation;
 	UPROPERTY(VisibleAnywhere)
 	TMap<FVector, FVector> Rooms;
+	UPROPERTY(VisibleAnywhere)
 	TArray<FVector> CorridorTiles;
-	FVector NextLocation;
+
+	FVector MaxExtents;
 
 };
 
