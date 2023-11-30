@@ -16,7 +16,7 @@ public:
 	AGenerator();
 	virtual void Tick(float DeltaTime) override;
 	
-protected:
+public:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -29,6 +29,7 @@ protected:
 	void SpawnCorridorsY(FVector Start, FVector Finish, TArray<FVector>& FloorTilesReturn);
 	void SpawnCorridorsX(FVector Start, FVector Finish, TArray<FVector> &FloorTilesReturn);
 	void TestRelativeLocation(FVector ReferenceLocation, TArray<FVector> TestArray, int32 X, int32 Y, FVector &Location, bool &isPresentTile);
+	
 
 	UPROPERTY(VisibleAnywhere)
 	int32 Seed;
