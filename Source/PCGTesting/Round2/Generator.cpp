@@ -227,8 +227,9 @@ void AGenerator::SpawnTiles()
 	for (auto Tile : FloorTiles)
 	{
 		FloorISMC->AddInstance(FTransform(Tile * Scale));
-		FVector RoofLocation = FVector(Tile.X, Tile.Y, Tile.Z + Scale); //Upshifting location to be at the top of the walls by 'Scale'.
-		FloorISMC->AddInstance(FTransform(RoofLocation * Scale)); // Spawning Roof.
+		FVector RoofLocation = Tile * Scale; //Upshifting location to be at the top of the walls by 'Scale'.
+		RoofLocation.Z += Scale;
+		FloorISMC->AddInstance(FTransform(RoofLocation)); // Spawning Roof.
 		
 		for(int i = 0; i < 3; i++)
 		{
