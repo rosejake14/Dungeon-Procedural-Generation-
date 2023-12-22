@@ -53,11 +53,11 @@ void AGenerator::OnConstruction(const FTransform& Transform)
 	if(NewSeed == true) //On click randomise and set new seed;
 	{
 		NewSeed = false;
-		Seed = rand () % 90000;
-		Stream.Initialize(Seed);
+		Seed = rand () % 90000; 
+		Stream.Initialize(Seed); //This Stream will allow for seeds to be re-created
 	}
 	Stream.Initialize(Seed); //Manually update seed;
-	GenerateMap();
+	GenerateMap(); //Begin making the dungeons
 }
 
 void AGenerator::GenerateMap()
@@ -69,7 +69,7 @@ void AGenerator::GenerateMap()
 	TArray<FVector> CorridorTilesIn;
 	UE_LOG(LogTemp, Warning, TEXT("Generating Map..."));
 	for(int i = 0; i < RoomCount; i++)
-	{
+	{ 
 		if(i == 0) //Generates first location of Actor 0,0,0.
 		{
 			MakeFloor(PreviousLocation, FloorTilesIn, LocationOut, Extents);
@@ -80,11 +80,12 @@ void AGenerator::GenerateMap()
 		{
 			bool Valid;
 			FindNextLocation(Valid, NextLocation);
-			if(Valid == true)
+			if(Valid == true) //If next location is a suitable location then continue to spawn next room. 
 			{
 				MakeFloor(NextLocation, FloorTilesIn, LocationOut, Extents);
-				FloorTiles.Append(FloorTilesIn);
-				Rooms.Add(LocationOut, Extents);
+				FloorTiles.Append(FloorTilesIn); //Adds the successful floor tiles to spawn.
+				//Using the extents of the room which is the further point and the origin point, adds to TMap of Rooms. 
+				Rooms.Add(LocationOut, Extents); 
 				UE_LOG(LogTemp, Warning, TEXT("Another Room Added"));
 				
 				CreateCorridors(PreviousLocation, NextLocation, CorridorTilesIn); //Make Corridor Between Last 2 Rooms.
@@ -95,17 +96,21 @@ void AGenerator::GenerateMap()
 			}
 		}
 	}
-	SpawnTiles();
+	SpawnTiles(); 
 }
 
 void AGenerator::MakeFloor(FVector Location, TArray<FVector> &FloorTilesIn, FVector &LocationOut, FVector &Extents) 
 {
 	//Get Random X and Y Lengths & Make array of Floor Tiles from Root Position.
 	FVector RootLocation = Location;
-	int32 OutX = Stream.RandRange(RoomSizeMin, RoomSizeMax);
+
+	//Output of Length + Width of the Room depended on Stream
+	int32 OutX = Stream.RandRange(RoomSizeMin, RoomSizeMax); 
 	int32 OutY = Stream.RandRange(RoomSizeMin, RoomSizeMax);
-	Working = true;
+	//Based on Length + Width Area is calculated
 	int32 Area = (OutX * OutY) - 1;
+	
+	Working = true;
 	TArray<FVector> Tiles;
 	TArray<int32> ExtentsX;
 	TArray<int32> ExtentsY;
@@ -117,10 +122,10 @@ void AGenerator::MakeFloor(FVector Location, TArray<FVector> &FloorTilesIn, FVec
 	int32 LoopCount = 0;
 	
 	UE_LOG(LogTemp, Warning, TEXT("Adding Floor Tiles To Array"));
-	for(int i = 0; i <= Area; i++)
-	{
+	for(int i = 0; i <= Area; i++) 
+	{ //Adds a Tile for each space in the area defined by Min and Max of room size, with the root location being the origin displacement.
 		Tiles.Add(FVector((i / OutY) + RootLocation.X, (i % OutY) + RootLocation.Y, RootLocation.Z));
-	}
+	}  //Adds floors to spawn to Tiles array, in which this array will all be spawned in another function. 
 	if(isCulling)
 	{
 		while (Working)
@@ -131,8 +136,8 @@ void AGenerator::MakeFloor(FVector Location, TArray<FVector> &FloorTilesIn, FVec
 				TilesCopy = Tiles;
 				int ClampedCullingValue = FMath::Clamp(Stream.RandRange(FloorCullingMin,FloorCullingMax) - 1, 0, TilesCopy.Num()/4); // %4 so only a max of a 1/4 will be culled.
 				for(int i = 0; i < ClampedCullingValue; i++)
-				{
-					int RandomIndex = Stream.RandRange(0,TilesCopy.Num() - 1);
+				{ //Loop through this dependent on the clamped value which calculates a max of a 1/4 of the tiles to remove. 
+					int RandomIndex = Stream.RandRange(0,TilesCopy.Num() - 1); //This will provide a random index of the tiles in which to remove. 
 					TilesCopy.RemoveAt(RandomIndex);
 				}
 				ConnectedTiles.Empty();
@@ -142,17 +147,18 @@ void AGenerator::MakeFloor(FVector Location, TArray<FVector> &FloorTilesIn, FVec
 					TileFound = false;
 					bool isInArray;
 					FVector TileLocation;
-					for (auto Tile : ConnectedTiles)
+					for (auto Tile : ConnectedTiles) //Loop through each tile in ConnectedTiles Array. 
 					{
-						for(int i = 0; i < 3; i++)
+						for(int i = 0; i < 3; i++)  //Checks all directions. 
 						{
 							TestRelativeLocation(Tile, TilesCopy,1,0,TileLocation,isInArray);
 							if(isInArray)
 							{
-								ConnectedTiles.Add(TileLocation);
-								TilesCopy.Remove(TileLocation);
-								TileFound = true;
+								ConnectedTiles.Add(TileLocation); //If there is a tile next to it, success
+								TilesCopy.Remove(TileLocation); //and so remove that tile from the tiles array to be culled.
+								TileFound = true; 
 							}
+							//Repeat for all directions based on 1 up, 1 right, 1 left, 1 down from that tile...
 							TestRelativeLocation(Tile, TilesCopy,0,1,TileLocation,isInArray);
 							if(isInArray)
 							{
@@ -187,10 +193,11 @@ void AGenerator::MakeFloor(FVector Location, TArray<FVector> &FloorTilesIn, FVec
 					Working = true;
 					++LoopCount;
 				}
-			}else
-			{ //Fail out without culling any tiles.
+			}else //Safety net so rooms don't spawn with dead space rooms with no entry/exit.
+			{ //If there are no tiles around the tile,
+				//then the culling will not proceed and the room will spawn normal with no removals.
 				Working = false;
-				ConnectedTiles = Tiles;
+				ConnectedTiles = Tiles; //Set back to original tiles - not the copied tiles with removed tiles. 
 			}
 		}
 	}else
@@ -226,23 +233,25 @@ void AGenerator::SpawnTiles()
 	
 	for (auto Tile : FloorTiles)
 	{
-		FloorISMC->AddInstance(FTransform(Tile * Scale));
+		FloorISMC->AddInstance(FTransform(Tile * Scale)); // Spawning Floor.
 		FVector RoofLocation = Tile * Scale; //Upshifting location to be at the top of the walls by 'Scale'.
 		RoofLocation.Z += Scale;
 		FloorISMC->AddInstance(FTransform(RoofLocation)); // Spawning Roof.
 		
-		for(int i = 0; i < 3; i++)
+		for(int i = 0; i < 3; i++) //Loop for each direction. 
 		{
+			//Check each direction if there is a tile or empty space. If empty space, means end of the room, so spawn door. 
 			TestRelativeLocation(Tile, FloorTiles, 1, 0, Location, isFloorF);
-			TestRelativeLocation(Tile, FloorTiles,0, 1, Location, isFloorR);
+			TestRelativeLocation(Tile, FloorTiles,0, 1, Location, isFloorR); 
 			TestRelativeLocation(Tile, FloorTiles,-1, 0, Location, isFloorD);
 			TestRelativeLocation(Tile, FloorTiles, 0, -1, Location, isFloorL);
-			if(!isFloorF)
-			{
+			if(!isFloorF) //Is there NOT a floor Forward?
+			{ //Spawn Wall
 				Rotation = FQuat::MakeFromEuler(FVector(0,0,90));
-				FVector FloorLocation = FVector(Tile)  * Scale;
-				FloorLocation.X += Scale;
-				WallISMC->AddInstance(FTransform(Rotation, FloorLocation));
+				FVector FloorLocation = FVector(Tile)  * Scale; 
+				FloorLocation.X += Scale; //Assure the length of each wall is added to the location.
+				//Using Instanced Static Mesh Components to add instances in the world. 
+				WallISMC->AddInstance(FTransform(Rotation, FloorLocation)); 
 			}
 			if(!isFloorR)
 			{
@@ -285,10 +294,10 @@ void AGenerator::FindNextLocation(bool &Valid, FVector &NewLocationtoSpawn)
 			TestIndex = Stream.RandRange(0, Directions.Last());
 			int32 addedInput;
 			FVector Location;
-			if(Merging){addedInput = RoomSizeMax;}else{addedInput = RoomSizeMax+1;}
-			switch(TestIndex)
+			if(Merging){addedInput = RoomSizeMax;}else{addedInput = RoomSizeMax+1;} //Sets the added input to the Maximum room size
+			switch(TestIndex)  
 			{
-			case(0):
+			case(0): //if merging is enabled, the rooms will check for spaces direction next to the spawned room as well as spaces apart from it. 
 				TestRelativeLocation(PreviousLocation, FloorTiles,addedInput,0,Location,isFloorTile);
 				break;
 			case(1):
@@ -437,5 +446,4 @@ void AGenerator::TestRelativeLocation(FVector ReferenceLocation,TArray<FVector> 
 { //Check if Tile relative to Reference has an existing floor tile.
 	Location = FVector(ReferenceLocation.X + X,ReferenceLocation.Y + Y,ReferenceLocation.Z);
 	isPresentTile = TestArray.Contains(Location);
-
 }

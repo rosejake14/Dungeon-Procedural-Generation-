@@ -25,7 +25,7 @@ void UActorSpawner::SpawnItems()
 		FloorTilesCopy = GeneratorRef->FloorTiles;
 		if(RoomSpawnOnly)
 		{
-			
+			//To do...
 		}else
 		{
 			FloorTilesCopy.Append(GeneratorRef->CorridorTiles);
@@ -45,28 +45,36 @@ void UActorSpawner::CreateInstances()
 	FActorSpawnParameters SpawnParameters;
 	FTransform LocationToSpawn;
 	FVector LastLocation;
-	
-	
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 	
 	while(Quantity > ItemsSpawned)
-	{
-		FloorIndex = GeneratorRef->Stream.RandRange(0,FloorTilesCopy.Num() - 1);
+	{ //If the amount of spawned items isn't met the desired amount then loop.
+		//Gets a random floor with reference to stream.
+		FloorIndex = GeneratorRef->Stream.RandRange(0,FloorTilesCopy.Num() - 1); 
 		while(UKismetMathLibrary::EqualEqual_Vector4Vector4(FloorTilesCopy[FloorIndex] * GeneratorRef->Scale ,LastLocation, MinDistance))
 		{
+			// Ensure the newly chosen floor is not too close too the last spawned location.
 			FloorIndex = GeneratorRef->Stream.RandRange(0,FloorTilesCopy.Num() - 1);
 		}
 		
 		if(!UKismetMathLibrary::EqualEqual_Vector4Vector4(FloorTilesCopy[FloorIndex] * GeneratorRef->Scale ,LastLocation, MinDistance))
 		{
-			LocationToSpawn.SetLocation(FVector((FloorTilesCopy[FloorIndex] * GeneratorRef->Scale) + GeneratorRef->GetActorLocation() + Offset)); //Get Spawn Location From Random Tile Index.
-			LastLocation = FVector((FloorTilesCopy[FloorIndex] * GeneratorRef->Scale) + GeneratorRef->GetActorLocation()); //Saves Last Location without Offset on that tile.
+			// Get spawn location from a randomly chosen tile index.
+			LocationToSpawn.SetLocation(FVector((FloorTilesCopy[FloorIndex] * GeneratorRef->Scale) + GeneratorRef->GetActorLocation() + Offset)); 
+
+			// Save the last location without an offset on that tile.
+			LastLocation = FVector((FloorTilesCopy[FloorIndex] * GeneratorRef->Scale) + GeneratorRef->GetActorLocation()); 
 			for (auto Element : SpawnList)
 			{
+				// Iterate through the SpawnList and spawn an actor based on random weights.
 				if(RandomBoolWithWeightFromStream(SpawnList.FindRef(Element.Key)))
+					// Spawns an actor from the TMap which specifies actor and chance to spawn.
 				{
+					//Spawn AActor from TMap, Location and 'AdjustIfPossibleButAlwaysSpawn'. 
 					GetWorld()->SpawnActor<AActor>(Element.Key, LocationToSpawn, SpawnParameters);
-					FloorTilesCopy.RemoveAt(FloorIndex);
+					
+					//Assures another item can't spawn in the same location.
+					FloorTilesCopy.RemoveAt(FloorIndex); 
 					ItemsSpawned++;
 					break;
 				}
