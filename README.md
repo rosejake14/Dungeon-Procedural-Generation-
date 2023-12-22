@@ -1,10 +1,8 @@
+# Procedural Dungeon Generator
+A Tool for building Procedurally Generated Rooms, with actor spawning and a fully customizable structure. 
 
-# PCGTesting
- Testing Procedural Methods
 
-
-## Additional Information
-This is a procedural dungeon generator to randomly spawn different-sized rooms across the local world.
+## Imagery
 ![image](https://github.com/rosejake14/Dungeon-Procedural-Generation-/assets/62072145/0544fe07-4db1-4f08-980f-d2e0be81fe9c)
 
 
